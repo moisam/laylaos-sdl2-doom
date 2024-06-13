@@ -70,18 +70,22 @@
 #undef PACKAGE_BUGREPORT
 
 /* Define to the full name of this package. */
+#undef PACKAGE_NAME
 #define PACKAGE_NAME "SDL2-Doom"
 
 /* Define to the full name and version of this package. */
+#undef PACKAGE_STRING
 #define PACKAGE_STRING "SDL2-Doom"
 
 /* Define to the one symbol short name of this package. */
+#undef PACKAGE_TARNAME
 #define PACKAGE_TARNAME "sdl2-doom.tar"
 
 /* Define to the home page for this package. */
 #define PACKAGE_URL ""
 
 /* Define to the version of this package. */
+#undef PACKAGE_VERSION
 #define PACKAGE_VERSION 0.1
 
 /* Change this when you create your awesome forked version */
