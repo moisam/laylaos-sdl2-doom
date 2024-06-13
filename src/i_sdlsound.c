@@ -446,6 +446,7 @@ static boolean ExpandSoundData_SRC(sfxinfo_t *sfxinfo,
 
 #endif
 
+/*
 static boolean ConvertibleRatio(int freq1, int freq2)
 {
     int ratio;
@@ -474,6 +475,7 @@ static boolean ConvertibleRatio(int freq1, int freq2)
         return ratio == 1;
     }
 }
+*/
 
 #ifdef DEBUG_DUMP_WAVS
 
@@ -533,7 +535,7 @@ static boolean ExpandSoundData_SDL(sfxinfo_t *sfxinfo,
                                    int samplerate,
                                    int length)
 {
-    SDL_AudioCVT convertor;
+    //SDL_AudioCVT convertor;
     Mix_Chunk *chunk;
     uint32_t expanded_length;
  
