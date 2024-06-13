@@ -39,6 +39,10 @@
 #include <stdarg.h>
 #include <SDL2/SDL.h>
 
+int video_initialized = 0;
+int SCALED_SCREENWIDTH;
+int SCALED_SCREENHEIGHT;
+
 #define SDL_RESX 320 * 3 //FIXME: Do scaling via arg in video interface
 #define SDL_RESY 200 * 3
 
@@ -63,7 +67,8 @@ struct FB_ScreenInfo
 	uint32_t yres_virtual;
 
 	uint32_t bits_per_pixel;		/* guess what			*/
-	
+	uint32_t byts_per_pixel;
+
 							/* >1 = FOURCC			*/
 	struct FB_BitField red;		/* bitfield in s_Fb mem if true color, */
 	struct FB_BitField green;	/* else only length is significant */
@@ -152,20 +157,28 @@ void cmap_to_fb(uint8_t * out, uint8_t * in, int in_pixels)
     int i, j, k;
     struct color c;
     uint32_t pix;
-    uint16_t r, g, b;
+    //uint16_t r, g, b;
 
     for (i = 0; i < in_pixels; i++)
     {
         c = colors[*in];  /* R:8 G:8 B:8 format! */
+	/*
         r = (uint16_t)(c.r >> (8 - s_Fb.red.length));
         g = (uint16_t)(c.g >> (8 - s_Fb.green.length));
         b = (uint16_t)(c.b >> (8 - s_Fb.blue.length));
         pix = r << s_Fb.red.offset;
         pix |= g << s_Fb.green.offset;
         pix |= b << s_Fb.blue.offset;
+	*/
+	pix = (c.r << 16) | (c.g << 8) | (c.b);
+
+#ifdef __laylaos__
+        //pix |= 0xff << s_Fb.transp.offset;
+        pix |= 0xff << 24;
+#endif
 
         for (k = 0; k < fb_scaling; k++) {
-            for (j = 0; j < s_Fb.bits_per_pixel/8; j++) {
+            for (j = 0; j < s_Fb.byts_per_pixel; j++) {
                 *out = (pix >> (j*8));
                 out++;
             }
@@ -184,6 +197,7 @@ void I_InitGraphics (void)
 	s_Fb.xres_virtual = s_Fb.xres;
 	s_Fb.yres_virtual = s_Fb.yres;
 	s_Fb.bits_per_pixel = 32;
+	s_Fb.byts_per_pixel = s_Fb.bits_per_pixel / 8;
 
 	s_Fb.blue.length = 8;
 	s_Fb.green.length = 8;
@@ -234,7 +248,7 @@ void I_InitGraphics (void)
     {
         window = SDL_CreateWindow("DOOM", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 
             SDL_RESX, SDL_RESY, SDL_WINDOW_SHOWN);
-        renderer =  SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+        renderer = SDL_CreateRenderer(window, -1, 0);
         texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGB888, SDL_TEXTUREACCESS_TARGET, 
             SDL_RESX, SDL_RESY);
 
@@ -246,8 +260,13 @@ void I_InitGraphics (void)
         printf("I_InitGraphics: Init SDL video.\n");
     }
 
+    SCALED_SCREENHEIGHT = SCREENHEIGHT * fb_scaling;
+    SCALED_SCREENWIDTH = SCREENWIDTH * fb_scaling;
+
     extern int I_InitInput(void);
     I_InitInput();
+
+    video_initialized = 1;
 }
 
 void I_ShutdownGraphics (void)
@@ -286,18 +305,23 @@ void I_UpdateNoBlit (void)
 void I_FinishUpdate (void)
 {
     int y;
-    int x_offset, y_offset, x_offset_end;
+    int x_offset /* , y_offset */, x_offset_end;
     unsigned char *line_in, *line_out;
 
     /* Offsets in case FB is bigger than DOOM */
     /* 600 = s_Fb height, 200 screenheight */
     /* 600 = s_Fb height, 200 screenheight */
     /* 2048 =s_Fb width, 320 screenwidth */
-    y_offset     = (((s_Fb.yres - (SCREENHEIGHT * fb_scaling)) * s_Fb.bits_per_pixel/8)) / 2;
-    x_offset     = (((s_Fb.xres - (SCREENWIDTH  * fb_scaling)) * s_Fb.bits_per_pixel/8)) / 2; // XXX: siglent FB hack: /4 instead of /2, since it seems to handle the resolution in a funny way
+    x_offset     = (((s_Fb.xres - SCALED_SCREENWIDTH) * s_Fb.byts_per_pixel)) / 2; // XXX: siglent FB hack: /4 instead of /2, since it seems to handle the resolution in a funny way
+    x_offset_end = ((s_Fb.xres - SCALED_SCREENWIDTH) * s_Fb.byts_per_pixel) - x_offset;
+    /*
+    y_offset     = (((s_Fb.yres - (SCREENHEIGHT * fb_scaling)) * s_Fb.byts_per_pixel)) / 2;
+    x_offset     = (((s_Fb.xres - (SCREENWIDTH  * fb_scaling)) * s_Fb.byts_per_pixel)) / 2; // XXX: siglent FB hack: /4 instead of /2, since it seems to handle the resolution in a funny way
     //x_offset     = 0;
-    x_offset_end = ((s_Fb.xres - (SCREENWIDTH  * fb_scaling)) * s_Fb.bits_per_pixel/8) - x_offset;
-
+    x_offset_end = ((s_Fb.xres - (SCREENWIDTH  * fb_scaling)) * s_Fb.byts_per_pixel) - x_offset;
+    */
+    size_t pitch = (SCALED_SCREENWIDTH * (s_Fb.byts_per_pixel)) + x_offset_end;
+ 
     /* DRAW SCREEN */
     line_in  = (unsigned char *) I_VideoBuffer;
     line_out = (unsigned char *) fb_SDL;
@@ -311,14 +335,21 @@ void I_FinishUpdate (void)
             line_out += x_offset;
             //cmap_to_rgb565((void*)line_out, (void*)line_in, SCREENWIDTH);
             cmap_to_fb((void*)line_out, (void*)line_in, SCREENWIDTH);
-            line_out += (SCREENWIDTH * fb_scaling * (s_Fb.bits_per_pixel/8)) + x_offset_end;
+            //line_out += (SCALED_SCREENWIDTH * (s_Fb.byts_per_pixel)) + x_offset_end;
+            line_out += pitch;
         }
         line_in += SCREENWIDTH;
     }
 
-	SDL_UpdateTexture(texture, NULL, fb_SDL, SDL_RESX * sizeof(uint32_t));
+    SDL_Rect displayrect;
+    displayrect.x = 0;
+    displayrect.y = 0;
+    displayrect.w = SDL_RESX;
+    displayrect.h = SDL_RESY;
+
+    SDL_UpdateTexture(texture, NULL, fb_SDL, SDL_RESX * sizeof(uint32_t));
     SDL_RenderClear(renderer);
-    SDL_RenderCopy(renderer, texture, NULL, NULL);
+    SDL_RenderCopy(renderer, texture, NULL, &displayrect);
     SDL_RenderPresent(renderer);
 }
 
