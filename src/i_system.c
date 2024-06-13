@@ -244,7 +244,7 @@ void I_Error (char *error, ...)
 {
     char msgbuf[512];
     va_list argptr;
-    atexit_listentry_t *entry;
+    //atexit_listentry_t *entry;
     boolean exit_gui_popup;
 
     if (already_quitting)
@@ -275,7 +275,9 @@ void I_Error (char *error, ...)
     // Pop up a GUI dialog box to show the error message, if the
     // game was not run from the console (and the user will
     // therefore be unable to otherwise see the message).
-    if (exit_gui_popup)
+    extern int video_initialized;
+
+    if (exit_gui_popup && video_initialized)
     {
         SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "", msgbuf, NULL);
     }
