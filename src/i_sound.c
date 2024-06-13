@@ -97,6 +97,7 @@ static sound_module_t *sound_modules[] =
 
 // Compiled-in music modules:
 
+/*
 static music_module_t *music_modules[] =
 {
     #ifdef FEATURE_SOUND
@@ -104,6 +105,7 @@ static music_module_t *music_modules[] =
     #endif
     NULL,
 };
+*/
 
 // Check if a sound device is in the given list of devices
 
@@ -156,7 +158,7 @@ static void InitSfxModule(boolean use_sfx_prefix)
 
 static void InitMusicModule(void)
 {
-    int i;
+    //int i;
 
     music_module = &music_sdl_module; return;
 
