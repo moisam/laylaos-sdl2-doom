@@ -1,10 +1,20 @@
+SYSROOT:=$(CROSSCOMPILE_SYSROOT_PATH)
+
+BINDIR:=$(SYSROOT)/usr/bin
+DATADIR:=$(SYSROOT)/usr/bin
+
 SDL_CFLAGS = -D_REENTRANT -D_THREAD_SAFE -I/usr/include/SDL2
 SDL_LIBS =
 INCLUDES=-I../include
-CC=gcc
+#CC=gcc
 CFLAGS+= $(INCLUDES) $(SDL_CFLAGS)
 CFLAGS+=-Wall -DFEATURE_SOUND
-LIBS+=-lm -lSDL2 -lSDL2_mixer `sdl2-config --cflags --libs`
+CFLAGS+=-D__laylaos__
+CFLAGS+=$(if $(BUILD_ARCH) == "x86_64",-D__x86_64__,-D__i686__)
+CFLAGS+=--sysroot=$(SYSROOT) -isystem=/usr/include
+
+LIBS+=-lm -lSDL2 -lSDL2_mixer `$(BINDIR)/sdl2-config --cflags --libs`
+LIBS+=-lfreetype
 OBJDIR=build
 OUTPUT=sdl2-doom
 SRC_DOOM = i_main.o \
@@ -93,7 +103,15 @@ SRC_DOOM = i_main.o \
 
 OBJS += $(addprefix $(OBJDIR)/, $(SRC_DOOM))
 
-all:	 $(OUTPUT)
+all:	 check-config $(OUTPUT)
+
+check-config:
+	@if [ "$(BUILD_ARCH)" != "x86_64" ]; then  \
+	    if [ "$(BUILD_ARCH)" != "i686" ]; then   \
+	        echo; echo "Usage:"; echo "  make BUILD_ARCH={x86_64|i686}"; echo;    \
+	        exit 1;     \
+	    fi  \
+	fi
 
 clean:
 	rm -rf $(OBJDIR)
@@ -101,6 +119,11 @@ clean:
 	rm -f $(OUTPUT).exe
 	rm -f $(OUTPUT).gdb
 	rm -f $(OUTPUT).map
+
+install: $(OUTPUT)
+	cp $(OUTPUT) $(BINDIR)/
+	cp ../doom1.wad $(DATADIR)/
+
 
 $(OUTPUT):	$(OBJS)
 	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS) \
@@ -112,7 +135,5 @@ $(OBJDIR):
 	mkdir -p $(OBJDIR)
 
 $(OBJDIR)/%.o:	%.c
-
 	$(CC) $(CFLAGS) -c $< -o $@
-
 
