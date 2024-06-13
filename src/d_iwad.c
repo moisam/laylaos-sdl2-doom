@@ -57,7 +57,10 @@ static const iwad_t iwads[] =
 
 #define MAX_IWAD_DIRS 128
 
+#ifndef __laylaos__
 static boolean iwad_dirs_built = false;
+#endif
+
 static char *iwad_dirs[MAX_IWAD_DIRS];
 static int num_iwad_dirs = 0;
 
@@ -612,6 +615,13 @@ static void BuildIWADDirList(void)
     AddIWADDir("/usr/local/share/games/doom");
 
 #endif
+
+#elif __laylaos__
+
+    AddIWADDir("/usr/bin");
+    AddIWADDir("/usr/local/share/games/doom");
+    AddIWADDir (FILES_DIR);
+
 #else
     AddIWADDir (FILES_DIR);
 
