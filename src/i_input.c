@@ -106,7 +106,14 @@ static unsigned char toDoomKey(unsigned int key)
       key = KEY_USE;
       break;
     default:
-      key = tolower(key);
+      if(key < 127)
+      {
+	key = tolower(key);
+      }
+      else
+      {
+        key = 0;
+      }
       break;
     }
 
@@ -117,6 +124,11 @@ static void queueKeyPress(int pressed, unsigned int keyCode)
 {
   unsigned char key = toDoomKey(keyCode);
   unsigned short keyData = (pressed << 8) | key;
+
+  if(!key)
+  {
+    return;
+  }
 
   s_KeyQueue[s_KeyQueueWriteIndex] = keyData;
   s_KeyQueueWriteIndex++;
