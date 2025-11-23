@@ -1,22 +1,29 @@
-SYSROOT:=$(CROSSCOMPILE_SYSROOT_PATH)
+#SYSROOT:=$(HOME)/laylaos$(if $(HOST) == "x86-64",-x86_64,)
+#CC:=$(HOME)/opt/cross/bin/$(if $(HOST) == "x86-64",x86_64,i686)-laylaos-gcc
+#AR:=$(HOME)/opt/cross/bin/$(if $(HOST) == "x86-64",x86_64,i686)-laylaos-ar
+#AS:=$(HOME)/opt/cross/bin/$(if $(HOST) == "x86-64",x86_64,i686)-laylaos-as
 
-BINDIR:=$(SYSROOT)/usr/bin
-DATADIR:=$(SYSROOT)/usr/bin
+SYSROOT:=$(CROSS_BUILD_SYSROOT)
+
+BINDIR:=$(SYSROOT)/usr/local/bin
+DATADIR:=$(SYSROOT)/usr/local/bin
 
 SDL_CFLAGS = -D_REENTRANT -D_THREAD_SAFE -I/usr/include/SDL2
 SDL_LIBS =
 INCLUDES=-I../include
+
 #CC=gcc
 CFLAGS+= $(INCLUDES) $(SDL_CFLAGS)
 CFLAGS+=-Wall -DFEATURE_SOUND
-CFLAGS+=-D__laylaos__
-CFLAGS+=$(if $(BUILD_ARCH) == "x86_64",-D__x86_64__,-D__i686__)
-CFLAGS+=--sysroot=$(SYSROOT) -isystem=/usr/include
+CFLAGS+=-D__laylaos__ -DHAVE_MMAP
+CFLAGS+=$(if $(HOST) == "x86-64",-D__x86_64__,-D__i686__)
+CFLAGS+=--sysroot=$(SYSROOT) -isystem=/usr/local/include
 
 LIBS+=-lm -lSDL2 -lSDL2_mixer `$(BINDIR)/sdl2-config --cflags --libs`
 LIBS+=-lfreetype
 OBJDIR=build
 OUTPUT=sdl2-doom
+
 SRC_DOOM = i_main.o \
 			dummy.o \
 			am_map.o \
@@ -99,16 +106,17 @@ SRC_DOOM = i_main.o \
 			w_main.o   \
 			w_wad.o   \
 			z_zone.o   \
-			w_file_stdc.o  
+			w_file_stdc.o  \
+			w_file_posix.o
 
 OBJS += $(addprefix $(OBJDIR)/, $(SRC_DOOM))
 
 all:	 check-config $(OUTPUT)
 
 check-config:
-	@if [ "$(BUILD_ARCH)" != "x86_64" ]; then  \
-	    if [ "$(BUILD_ARCH)" != "i686" ]; then   \
-	        echo; echo "Usage:"; echo "  make BUILD_ARCH={x86_64|i686}"; echo;    \
+	@if [ "$(HOST)" != "x86-64" ]; then  \
+	    if [ "$(HOST)" != "i686" ]; then   \
+	        echo; echo "Usage:"; echo "  make HOST={x86-64|i686}"; echo;    \
 	        exit 1;     \
 	    fi  \
 	fi
@@ -122,8 +130,7 @@ clean:
 
 install: $(OUTPUT)
 	cp $(OUTPUT) $(BINDIR)/
-	cp ../doom1.wad $(DATADIR)/
-
+	cp ../doom2.wad $(DATADIR)/
 
 $(OUTPUT):	$(OBJS)
 	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS) \
