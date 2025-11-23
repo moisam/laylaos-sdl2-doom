@@ -68,7 +68,7 @@ struct FB_ScreenInfo
 
 	uint32_t bits_per_pixel;		/* guess what			*/
 	uint32_t byts_per_pixel;
-
+	
 							/* >1 = FOURCC			*/
 	struct FB_BitField red;		/* bitfield in s_Fb mem if true color, */
 	struct FB_BitField green;	/* else only length is significant */
@@ -159,23 +159,32 @@ void cmap_to_fb(uint8_t * out, uint8_t * in, int in_pixels)
     uint32_t pix;
     //uint16_t r, g, b;
 
+#ifdef __laylaos__
+    uint32_t *cout = (uint32_t *)out;
+
+    for (i = 0; i < in_pixels; i++) {
+        c = colors[*in];  /* R:8 G:8 B:8 format! */
+        pix = (c.r << 16) | (c.g << 8) | (c.b) | (0xff << 24);
+
+        for (k = 0; k < fb_scaling; k++) {
+            *cout = pix;
+            cout++;
+        }
+        in++;
+    }
+#else
     for (i = 0; i < in_pixels; i++)
     {
         c = colors[*in];  /* R:8 G:8 B:8 format! */
-	/*
+        /*
         r = (uint16_t)(c.r >> (8 - s_Fb.red.length));
         g = (uint16_t)(c.g >> (8 - s_Fb.green.length));
         b = (uint16_t)(c.b >> (8 - s_Fb.blue.length));
         pix = r << s_Fb.red.offset;
         pix |= g << s_Fb.green.offset;
         pix |= b << s_Fb.blue.offset;
-	*/
-	pix = (c.r << 16) | (c.g << 8) | (c.b);
-
-#ifdef __laylaos__
-        //pix |= 0xff << s_Fb.transp.offset;
-        pix |= 0xff << 24;
-#endif
+        */
+        pix = (c.r << 16) | (c.g << 8) | (c.b);
 
         for (k = 0; k < fb_scaling; k++) {
             for (j = 0; j < s_Fb.byts_per_pixel; j++) {
@@ -185,6 +194,7 @@ void cmap_to_fb(uint8_t * out, uint8_t * in, int in_pixels)
         }
         in++;
     }
+#endif
 }
 
 void I_InitGraphics (void)
@@ -248,7 +258,10 @@ void I_InitGraphics (void)
     {
         window = SDL_CreateWindow("DOOM", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 
             SDL_RESX, SDL_RESY, SDL_WINDOW_SHOWN);
+
         renderer = SDL_CreateRenderer(window, -1, 0);
+        //renderer =  SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+        
         texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGB888, SDL_TEXTUREACCESS_TARGET, 
             SDL_RESX, SDL_RESY);
 
@@ -259,7 +272,7 @@ void I_InitGraphics (void)
 
         printf("I_InitGraphics: Init SDL video.\n");
     }
-
+    
     SCALED_SCREENHEIGHT = SCREENHEIGHT * fb_scaling;
     SCALED_SCREENWIDTH = SCREENWIDTH * fb_scaling;
 
@@ -321,7 +334,7 @@ void I_FinishUpdate (void)
     x_offset_end = ((s_Fb.xres - (SCREENWIDTH  * fb_scaling)) * s_Fb.byts_per_pixel) - x_offset;
     */
     size_t pitch = (SCALED_SCREENWIDTH * (s_Fb.byts_per_pixel)) + x_offset_end;
- 
+
     /* DRAW SCREEN */
     line_in  = (unsigned char *) I_VideoBuffer;
     line_out = (unsigned char *) fb_SDL;
@@ -333,10 +346,11 @@ void I_FinishUpdate (void)
         int i;
         for (i = 0; i < fb_scaling; i++) {
             line_out += x_offset;
-            //cmap_to_rgb565((void*)line_out, (void*)line_in, SCREENWIDTH);
+            ////cmap_to_rgb565((void*)line_out, (void*)line_in, SCREENWIDTH);
             cmap_to_fb((void*)line_out, (void*)line_in, SCREENWIDTH);
             //line_out += (SCALED_SCREENWIDTH * (s_Fb.byts_per_pixel)) + x_offset_end;
             line_out += pitch;
+            ////line_out += (SCREENWIDTH * fb_scaling * (s_Fb.byts_per_pixel)) + x_offset_end;
         }
         line_in += SCREENWIDTH;
     }
@@ -347,7 +361,7 @@ void I_FinishUpdate (void)
     displayrect.w = SDL_RESX;
     displayrect.h = SDL_RESY;
 
-    SDL_UpdateTexture(texture, NULL, fb_SDL, SDL_RESX * sizeof(uint32_t));
+	SDL_UpdateTexture(texture, NULL, fb_SDL, SDL_RESX * sizeof(uint32_t));
     SDL_RenderClear(renderer);
     SDL_RenderCopy(renderer, texture, NULL, &displayrect);
     SDL_RenderPresent(renderer);
