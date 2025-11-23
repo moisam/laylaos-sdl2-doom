@@ -60,10 +60,12 @@ wad_file_t *W_OpenFile(char *path)
     // directly into memory.
     //
 
+#ifndef HAVE_MMAP
     if (!M_CheckParm("-mmap"))
     {
         return stdc_wad_file.OpenFile(path);
     }
+#endif
 
     // Try all classes in order until we find one that works
 
