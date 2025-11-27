@@ -108,15 +108,7 @@ SRC_DOOM = i_main.o \
 
 OBJS += $(addprefix $(OBJDIR)/, $(SRC_DOOM))
 
-all:	 check-config $(OUTPUT)
-
-check-config:
-	@if [ "$(HOST)" != "x86-64" ]; then  \
-	    if [ "$(HOST)" != "i686" ]; then   \
-	        echo; echo "Usage:"; echo "  make HOST={x86-64|i686}"; echo;    \
-	        exit 1;     \
-	    fi  \
-	fi
+all:	 $(OUTPUT)
 
 clean:
 	rm -rf $(OBJDIR)
