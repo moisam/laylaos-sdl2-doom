@@ -1,9 +1,6 @@
-#SYSROOT:=$(HOME)/laylaos$(if $(HOST) == "x86-64",-x86_64,)
-#CC:=$(HOME)/opt/cross/bin/$(if $(HOST) == "x86-64",x86_64,i686)-laylaos-gcc
-#AR:=$(HOME)/opt/cross/bin/$(if $(HOST) == "x86-64",x86_64,i686)-laylaos-ar
-#AS:=$(HOME)/opt/cross/bin/$(if $(HOST) == "x86-64",x86_64,i686)-laylaos-as
 
-SYSROOT:=$(CROSS_BUILD_SYSROOT)
+SYSROOT:=$(CROSSCOMPILE_SYSROOT_PATH)
+HOST:=$(BUILD_ARCH)
 
 BINDIR:=$(SYSROOT)/usr/local/bin
 DATADIR:=$(SYSROOT)/usr/local/bin
