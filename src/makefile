@@ -119,7 +119,7 @@ clean:
 
 install: $(OUTPUT)
 	cp $(OUTPUT) $(BINDIR)/
-	cp ../doom2.wad $(DATADIR)/
+	cp ../*.wad $(DATADIR)/
 
 $(OUTPUT):	$(OBJS)
 	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS) \
