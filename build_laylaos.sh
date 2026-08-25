@@ -12,7 +12,7 @@ cd ..
 
 # copy the icon
 mkdir -p ${CROSSCOMPILE_SYSROOT_PATH}/usr/share/gui/icons/
-cp doom.ico ${CROSSCOMPILE_SYSROOT_PATH}/usr/share/gui/icons/
+cp doom.ico doom.png ${CROSSCOMPILE_SYSROOT_PATH}/usr/share/gui/icons/
 
 # create a desktop entry file
 mkdir -p ${CROSSCOMPILE_SYSROOT_PATH}/usr/share/gui/desktop/
